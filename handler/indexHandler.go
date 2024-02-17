@@ -6,5 +6,5 @@ import (
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	util.ResponseWithProblem(w,200,"ok")
+	util.ResponseWithProblem(w, 200, "ok")
 }

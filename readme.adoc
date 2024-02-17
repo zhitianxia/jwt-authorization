@@ -10,10 +10,10 @@ JWT网关是具有jwt权限过滤和认证管理的代理网关程序，接口�
 
 == 使用方法
 
-. 下载或编译
+. link:https://github.com/zhitianxia/jwt-authorization/releases[下载jwt-authorization-1.0.0]
 . 配置
 +
-.auth.conf
+.link:auth.conf[]
 [source,conf]
 ----
 include::auth.conf[]
@@ -27,7 +27,7 @@ nohup ./authorization 1>/dev/null 2>&1 &
 
 == 前端对接说明
 
-调用登录接口后会在响应头中增加一个： `Authorization: Bearer <token>` ,前端获取到token后本地保存，后续访问受保护资源时将此令牌再放到请求头中即可。
+调用登录接口后jwt-authorization会在响应头中增加： `Authorization: Bearer <token>` ,前端获取到token后本地保存，后续访问受保护资源时将此令牌再放到请求头中即可。
 
 .使用jwt令牌访问受保护资源
 ----
@@ -61,7 +61,7 @@ location /user/api/v1/login {
 
 === 业务接口代理
 
-建议在前置代理中配置请求头：`X-Proxy-Pass`，这样jwt-authorization就可以根据该配置自动代理到给服务器，如果没有 `X-Proxy-Pass` 请求头，jwt-authorization会使用配置文件中的代理地址。
+建议在前置代理转发配置请求头：`X-Proxy-Pass`，这样jwt-authorization就可以根据该配置自动转发到该服务器，如果没有 `X-Proxy-Pass` 请求头，jwt-authorization会使用配置文件中的代理地址。
 
 .nginx业务代理地址配置示例
 ----
@@ -73,3 +73,8 @@ location /security {
     proxy_set_header X-Proxy-Pass "http://127.0.0.1:8080";
 }
 ----
+
+=== 待办
+
+* [ ] 支持cookies
+* [ ] 代理转发配置支持按前缀配置代理服务器
