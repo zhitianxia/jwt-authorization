@@ -1,0 +1,75 @@
+= JWT网关
+
+JWT网关是具有jwt权限过滤和认证管理的代理网关程序，接口的开发者只需关注业务逻辑，而无需关注用户权限，也无需关注分布式会话。
+
+== 功能简介
+
+代理接口类型::
+. 为登录接口增加jwt令牌管理能力：对登录接口请求进行代理拦截，对返回的用户名进行解析后组装jwt令牌再返回
+. 为普通接口或资源增加鉴权认证服务能力：对接口请求进行代理拦截，只有鉴权成功的请求才会放行转发到具体的接口，鉴权失败则直接返回401或403
+
+== 使用方法
+
+. 下载或编译
+. 配置
++
+.auth.conf
+[source,conf]
+----
+include::auth.conf[]
+----
+. 启动
++
+[source,bash]
+----
+nohup ./authorization 1>/dev/null 2>&1 &
+----
+
+== 前端对接说明
+
+调用登录接口后会在响应头中增加一个： `Authorization: Bearer <token>` ,前端获取到token后本地保存，后续访问受保护资源时将此令牌再放到请求头中即可。
+
+.使用jwt令牌访问受保护资源
+----
+curl -H "Authorization: Bearer <token>" <url>
+----
+
+.未携带令牌示例
+----
+curl http://127.0.0.1:8999/
+{"status":401,"title":"Unauthorized","detail":"验证失败：未登录"}
+----
+
+.携带令牌访问示例
+----
+curl -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpdGllcyI6IiIsImV4cCI6MTcwOTk0NDMzNywiaWF0IjoxNzA4MTQ0MzM3LCJpc3MiOiJ6aGl0aWFueGlhLmNvbSIsInN1YiI6InRlc3RVc2VybmFtZSJ9.H1nQRa6Y9tJmbyCmxciHxIgyZG_5tasHf3j7xdEATeA" http://127.0.0.1:8999/
+{"status":200,"title":"ok","detail":"正常"}
+----
+
+== 后端对接说明
+
+=== 登录接口代理
+需要提供登录登录接口，及登录返回的数据结构（主要是用户名位置），以方便根据用户名生成令牌。
+
+.nginx模拟登录代理后端配置示例
+----
+location /user/api/v1/login {
+    default_type application/json;
+    return 200 '{"_embedded": {"vos": {"username": "testUsername","name": "测试用户"}}}';
+}
+----
+
+=== 业务接口代理
+
+建议在前置代理中配置请求头：`X-Proxy-Pass`，这样jwt-authorization就可以根据该配置自动代理到给服务器，如果没有 `X-Proxy-Pass` 请求头，jwt-authorization会使用配置文件中的代理地址。
+
+.nginx业务代理地址配置示例
+----
+location /security {
+    proxy_pass http://127.0.0.1:8999;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Proxy-Pass "http://127.0.0.1:8080";
+}
+----
